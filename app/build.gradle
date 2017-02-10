@@ -5,7 +5,7 @@ android {
     buildToolsVersion "25.0.2"
     defaultConfig {
         applicationId "com.martinsing.imagesaveandretrieve"
-        minSdkVersion 15
+        minSdkVersion 23
         targetSdkVersion 25
         versionCode 1
         versionName "1.0"
@@ -26,4 +26,8 @@ dependencies {
     })
     compile 'com.android.support:appcompat-v7:25.1.1'
     testCompile 'junit:junit:4.12'
+    compile 'com.android.support:support-vector-drawable:25.1.0'
+    //Image Framework
+    compile 'com.github.bumptech.glide:glide:3.7.0'
+    compile 'com.android.support:support-v4:25.1.0'
 }
