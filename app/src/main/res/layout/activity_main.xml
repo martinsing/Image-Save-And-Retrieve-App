@@ -19,14 +19,12 @@
         android:id="@+id/lbl_btn_photo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:onClick="gotoPhotos"
-        android:text="Choose Photo" />
+        android:text="@string/choose_photo" />
 
     <Button
-        android:id="@+id/lbl_btn_clear"
+        android:id="@+id/lbl_btn_reset"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:onClick="clearData"
-        android:text="Clear Cache (Doesn't Work)" />
+        android:text="@string/reset" />
 
 </LinearLayout>

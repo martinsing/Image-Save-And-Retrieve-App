@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">ImageSaveAndRetrieve</string>
+    <string name="app_name">Image Save And Retrieve</string>
+    <string name="choose_photo">Choose Photo</string>
+    <string name="reset">Reset</string>
 </resources>

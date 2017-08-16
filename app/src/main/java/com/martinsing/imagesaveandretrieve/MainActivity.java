@@ -1,112 +1,132 @@
 package com.martinsing.imagesaveandretrieve;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-import java.io.IOException;
-
-public class MainActivity extends AppCompatActivity {
-
+    private static final int PICK_IMAGE_REQUEST = 0;
     private final String TAG = "Main Activity";
-    public static final String MYPROFILE = "profile";
-
+    private ImageView mImage;
+    private Uri mImageUri;
+    private Button choosePhoto;
+    private Button reset;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        ImageView imageView = (ImageView) findViewById(R.id.lbl_user_photo);
+
+        mImage = (ImageView) findViewById(R.id.lbl_user_photo);
+
+        choosePhoto = (Button) findViewById(R.id.lbl_btn_photo);
+        choosePhoto.setOnClickListener(this);
+        reset = (Button) findViewById(R.id.lbl_btn_reset);
+        reset.setOnClickListener(this);
 
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        String picturePath = preferences.getString(MYPROFILE, null);
-        if (MYPROFILE != null) {
-            Log.i(TAG, "MYPROFILE != null");
-            Glide.with(this)
-                    .load(picturePath)
-                    .placeholder(R.drawable.ic_account_box_black_24dp)
-//                    .error(R.drawable.ic_error_outline_black_24dp)
-                    .into(imageView);
+        String mImageUri = preferences.getString("image", null);
+
+        if (mImageUri != null) {
+            mImage.setImageURI(Uri.parse(mImageUri));
         } else {
-            Log.i(TAG, "MYPROFILE == null");
+            mImage.setImageResource(R.drawable.ic_launcher);
         }
     }
 
-    public void gotoPhotos(View view) {
-        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        intent.setAction(intent.ACTION_GET_CONTENT);
-        startActivityForResult(intent, 1);
+    /**
+     * Select an image
+     */
+    public void imageSelect() {
+        permissionsCheck();
+        Intent intent;
+        if (Build.VERSION.SDK_INT < 19) {
+            intent = new Intent(Intent.ACTION_GET_CONTENT);
+        } else {
+            intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+        }
+        intent.setType("image/*");
+        startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE_REQUEST);
+    }
+
+    public void permissionsCheck() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+            return;
+        }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
+        // Check which request we're responding to
+        if (requestCode == PICK_IMAGE_REQUEST) {
+            // Make sure the request was successful
+            if (resultCode == RESULT_OK) {
+                // The user picked a image.
+                // The Intent's data Uri identifies which item was selected.
+                if (data != null) {
 
-//        /*Original
-//        Returns the Picture into ImageView
-//        */
-//        if (requestCode == 1 && resultCode == RESULT_OK && data != null && data.getData() != null) {
-//            Uri uri = data.getData();
-//            try {
-//                Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
-//                Log.d(TAG, String.valueOf(bitmap));
-//                ImageView imageView = (ImageView) findViewById(R.id.lbl_user_photo);
-//                imageView.setImageBitmap(bitmap);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-        /* Returns the Picture into ImageView and saves picture path into DefaultSharedPreferences
-        */
-        if (requestCode == 1 && resultCode == RESULT_OK && data != null && data.getData() != null) {
-            Uri uri = data.getData();
-            try {
-                Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
+                    // This is the key line item, URI specifies the name of the data
+                    mImageUri = data.getData();
 
-                Log.d(TAG, String.valueOf(bitmap));
-                SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-                SharedPreferences.Editor edit = preferences.edit();
-                edit.remove(MYPROFILE);
-                edit.commit();
-                Log.i(TAG, "removed MYPROFILE");
+                    // Saves image URI as string to Default Shared Preferences
+                    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+                    SharedPreferences.Editor editor = preferences.edit();
+                    editor.putString("image", String.valueOf(mImageUri));
+                    editor.commit();
 
-                edit.putString(MYPROFILE, String.valueOf(uri));
-                edit.commit();
-                Log.i(TAG, "added path " + String.valueOf(uri) );
-
-                ImageView imageView = (ImageView) findViewById(R.id.lbl_user_photo);
-
-//                Glide.with(this)
-//                        .load(bitmap)
-//                        .into(imageView);
-                imageView.setImageBitmap(bitmap);
-                Log.i(TAG, "set Image bitmap");
-
-            } catch (IOException e) {
-                e.printStackTrace();
+                    // Sets the ImageView with the Image URI
+                    mImage.setImageURI(mImageUri);
+                    mImage.invalidate();
+                }
             }
         }
     }
 
-    /*
-Toast Notification telling user that the button is not yet set.
-*/
-    public void clearData(View v) {
+    /**
+     * Clear Default Shared Preferences
+     */
+    public void clearData() {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor editor = preferences.edit();
         editor.clear();
         editor.commit();
-        Toast.makeText(getApplicationContext(), "Cache Cleared, Maybe", Toast.LENGTH_SHORT).show();
+        finish();
+        startActivity(getIntent());
+    }
+
+    /**
+     * to handle the buttons
+     */
+    @Override
+    public void onClick(View view) {
+        switch (view.getId()) {
+            case R.id.lbl_btn_photo:
+                // get image
+                imageSelect();
+                break;
+            case R.id.lbl_btn_reset:
+                // increase by 1
+                clearData();
+                break;
+            default:
+                break;
+        }
     }
 }
